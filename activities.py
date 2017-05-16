@@ -11,18 +11,20 @@ def get_config():
     return config
 
 
-def get_activities(config, after=0):
-    num = 0
+def get_activities(config, after=0, before=None):
     results = []
+    data = dict(after=after, per_page=200, page=1)
+    if before:
+        data['before'] = before
     while True:
         r = requests.get('https://www.strava.com/api/v3/athlete/activities',
                 headers=dict(Authorization='Bearer %s' % config.get('access_token')),
-                data=dict(after=after, per_page=200, page=num))
+                data=data)
         latest = json.loads(r.text)
+        results.extend(latest)
         if not latest:
             break
-        results.extend(latest)
-        num = num + 1
+        data['page'] += 1
     return results
 
 
@@ -36,7 +38,12 @@ def main(args):
             last = long(sorted(entries)[-1].replace('.json', ''))
     else:
         os.mkdir(outputdir)
-    activities = get_activities(config, after=last+1)
+    if len(args) > 2:
+        activities = []
+        for activity in args[2:]:
+            activities.extend(get_activities(config, before=long(activity)-86400, after=long(activity)+86400))
+    else:
+        activities = get_activities(config, after=last+1)
     for activity in activities:
         if type(activity) != dict:
             continue

@@ -34,8 +34,9 @@ def apply_filters(filters, data):
     if 'type' in filters:
         data = data[data['type'].str.lower() == filters['type'].lower()]
     if 'groupby' in filters:
+        if filters['groupby'] == 'week':
+            return data.groupby(pd.Grouper(freq='1W'))
         if filters['groupby'] == 'month':
-            #return data.groupby([data.index.month, data.index.year])
             return data.groupby(pd.Grouper(freq='1M'))
         if filters['groupby'] == 'year':
             return data.groupby([data.index.year])
